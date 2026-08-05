@@ -1,4 +1,4 @@
-# Prato Cheio — [nome do grupo]
+# Prato Cheio — 404 Fome Not Found
 
 Projeto da disciplina **Análise, Projeto e Desenvolvimento Ágil**.
 Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
