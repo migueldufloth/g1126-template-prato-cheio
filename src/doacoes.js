@@ -2,6 +2,7 @@
 import * as repo from './repositorio.js';
 
 const CAMPOS_OBRIGATORIOS = ['tipo', 'quantidade', 'validade'];
+const ERRO_JA_ACEITA = 'doação já foi aceita por outra ONG';
 
 // História zero — "um doador publica uma doação".
 // Critério: tipo, quantidade e validade são obrigatórios.
@@ -23,9 +24,9 @@ export async function listarDisponiveis() {
 export async function aceitar(id, ong) {
   const doacao = await repo.buscarPorId(id);
   if (!doacao) throw new Error('doação não encontrada');
-  if (doacao.status !== 'disponivel') throw new Error('doação já foi aceita por outra ONG');
+  if (doacao.status !== 'disponivel') throw new Error(ERRO_JA_ACEITA);
 
   const atualizada = await repo.aceitar(id, ong);
-  if (!atualizada) throw new Error('doação já foi aceita por outra ONG');
+  if (!atualizada) throw new Error(ERRO_JA_ACEITA);
   return atualizada;
 }
