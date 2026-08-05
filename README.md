@@ -82,13 +82,13 @@ peça a revisão de **outro integrante**. Só então faça o merge.
 
 ## O que já está pronto e o que falta
 
-Pronto: estrutura do projeto, interface básica, rota de saúde, **conexão com o banco e o schema** (`src/db.js`), CI configurado e um teste passando (prova que a aplicação sobe).
+Pronto (Trabalho 1 — walking skeleton): estrutura do projeto, interface básica, rota de
+saúde, conexão com o banco e o schema (`src/db.js`), CI configurado, e a história zero
+funcionando ponta a ponta — **um doador publica uma doação → uma ONG vê a doação → a ONG
+a aceita e ela sai da lista.** Os 6 testes em `tests/doacoes.test.js` passam com `npm test`.
 
-Falta (Trabalho 1 — walking skeleton): implementar `src/doacoes.js` (regras) e
-`src/repositorio.js` (SQL) para que a história zero funcione ponta a ponta —
-**um doador publica uma doação → uma ONG vê a doação → a ONG a aceita e ela sai da lista.**
-Os critérios de aceite estão em `tests/doacoes.test.js` como `it.todo`: troque cada um
-por um teste de verdade conforme implementa.
+Falta: as demais histórias do produto (Trabalho 2 — projeto) e a refatoração do banco
+para PostgreSQL (Trabalho 3 — construção).
 
 ## Uso de IA
 
