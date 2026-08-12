@@ -40,13 +40,14 @@ antes que outra instituição o faça ou que o alimento se perca.
 
 ## Stakeholders
 
-| Stakeholder | Interesse | Influência | O que espera |
-|---|---|---|---|
-| Doador (restaurante, mercado, produtor) | Descartar menos, cumprir responsabilidade social a baixo esforço | Alta | Publicar uma doação em poucos cliques, sem cadastro complexo |
-| ONG / instituição receptora | Conseguir alimento confiável e a tempo de distribuir | Alta | Ver doações disponíveis rapidamente e garantir a reserva antes de outra ONG |
-| Beneficiário final (pessoa atendida pela ONG) | Receber alimento em condição de consumo | Baixa (não usa o sistema diretamente) | Que o alimento chegue antes de vencer |
-| Grupo de desenvolvimento (disciplina) | Entregar um produto real, com processo ágil, em três unidades | Alta | Walking skeleton simples, testável e que evolua sem retrabalho |
-| Professor / avaliador | Avaliar rigor de análise, projeto e construção ágil | Alta | Rastreabilidade entre análise, decisões (ADR) e código |
+| Stakeholder | Interesse | Influência | O que espera | Consequência para a iteração 1 |
+|---|---|---|---|---|
+| Doador (restaurante, mercado, produtor) | Descartar menos, cumprir responsabilidade social a baixo esforço | Alta | Publicar uma doação em poucos cliques, sem cadastro complexo | Formulário de publicação com só 3 campos obrigatórios |
+| ONG / instituição receptora | Conseguir alimento confiável e a tempo de distribuir | Alta | Ver doações disponíveis rapidamente e garantir a reserva antes de outra ONG | Listagem em tempo real + exclusividade de aceite garantida pelo backend |
+| Beneficiário final (pessoa atendida pela ONG) | Receber alimento em condição de consumo | Baixa (não usa o sistema diretamente) | Que o alimento chegue antes de vencer | Não tem tela própria nesta iteração — impacto medido indiretamente |
+| Grupo de desenvolvimento (disciplina) | Entregar um produto real, com processo ágil, em três unidades | Alta | Walking skeleton simples, testável e que evolua sem retrabalho | Define o escopo mínimo: publicar → listar → aceitar, nada além disso |
+| Professor / avaliador | Avaliar rigor de análise, projeto e construção ágil | Alta | Rastreabilidade entre análise, decisões (ADR) e código | Exige este próprio documento de análise atualizado e coerente com o código |
+| Vigilância sanitária | Garantir rastreabilidade mínima do alimento redistribuído | Alta (pode vetar) | Saber tipo, quantidade e validade de cada doação | Define os 3 campos obrigatórios do cadastro (ver Conflitos de prioridade) |
 
 ## Objetivos de impacto
 
@@ -71,6 +72,43 @@ antes que outra instituição o faça ou que o alimento se perca.
   camada de dados, não na regra de negócio isolada).
 - Não há, nesta unidade, edição ou cancelamento de doação, nem autenticação
   de doador/ONG — está fora do escopo do walking skeleton.
+
+- **Regra ausente (o caso não define):** o que acontece se uma ONG aceita uma doação e
+  não retira dentro de um prazo razoável — a doação fica "presa" indefinidamente com
+  status `aceita`? Nesta unidade, não há expiração automática nem devolução à lista de
+  disponíveis; fica registrado como lacuna a decidir em unidade futura, não como
+  requisito esquecido.
+
+## Conflitos de prioridade
+
+**Conflito: simplicidade de cadastro (doador) x rastreabilidade (vigilância sanitária)**
+
+- **Fala do doador:** "Se eu tiver que preencher um monte de campo toda vez que sobra
+  comida, eu simplesmente não vou usar — no WhatsApp eu só mando uma mensagem."
+- **Fala da vigilância sanitária:** "Sem saber o quê, quanto e até quando, não dá pra
+  garantir que o alimento redistribuído é seguro para consumo."
+
+**O eixo do trade-off:** número de campos obrigatórios no cadastro da doação. Quanto mais
+campos a vigilância exige para rastreabilidade, maior o atrito para o doador publicar —
+e quanto menor o atrito para o doador, menos garantia de rastreabilidade mínima existe.
+
+**O que cada lado perde:**
+- O doador perde velocidade e simplicidade a cada campo adicional exigido.
+- A vigilância perde garantia de rastreabilidade a cada campo que deixa de ser obrigatório.
+
+**Critério usado para decidir:** manter obrigatório apenas o mínimo de informação que já
+permite rastrear uma doação problemática até a origem (tipo, quantidade e validade) —
+qualquer campo além desses três (ex.: forma de preparo, temperatura de conservação,
+número de lote) fica fora do walking skeleton por aumentar o atrito sem mudar o
+comportamento central que estamos validando nesta unidade.
+
+**Saída adotada:** *anular o eixo*, não apenas decidir um lado. Em vez de escolher entre
+"poucos campos" e "muitos campos", o grupo reduziu a rastreabilidade ao mínimo que já
+resolve o problema regulatório central (saber o quê, quanto e até quando) sem tratá-la
+como um formulário extenso — os três campos obrigatórios (`tipo`, `quantidade`,
+`validade`) cumprem as duas necessidades ao mesmo tempo. Isso é visível diretamente em
+`criarDoacao()`, em `src/doacoes.js`, onde exatamente esses três campos são validados como
+obrigatórios.
 
 ## Histórias de usuário
 
@@ -168,3 +206,9 @@ da API (`npm test`, 6 testes passando), a regra de exclusividade de
 aceitação (dupla aceitação é de fato recusada), e revisamos o texto deste
 documento para refletir decisões e riscos que o grupo discutiu, não apenas
 o que a IA sugeriu por padrão.
+
+Na Aula 2 (nível "IA para consulta"), usamos o Claude para conferir o que
+já estava coberto no documento contra o que a atividade pedia (mapa de
+stakeholders, objetivos, conflito de prioridade) e para revisar a redação
+do conflito de prioridade, da regra de negócio ausente e da nova coluna da
+tabela de stakeholders.
