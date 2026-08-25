@@ -55,3 +55,72 @@ Abaixo está a decomposição de uma história de logística realista para o con
 #### História Menor 3: Confirmação de Recebimento com Upload de Foto
 * **História:** "Como ONG, quero fazer o upload de uma foto do alimento recebido ao finalizar a retirada, para comprovar o estado físico do alimento e registrar a conclusão da doação."
 * **Valor Independente:** Serve como um mecanismo simples de auditoria e recibo visual para o doador e para a administração do sistema, garantindo transparência no final do fluxo.
+
+3. Geração e Refinamento de Histórias de Usuário com IA
+
+Para esta atividade, foi utilizada uma ferramenta de Inteligência Artificial generativa para criar histórias de usuário relacionadas ao contexto do Prato Cheio. Após a geração, as histórias foram analisadas pelo grupo e foram identificados problemas de escopo, clareza e testabilidade.
+
+A seguir estão três histórias originalmente sugeridas pela IA e as respectivas correções realizadas pelo grupo.
+
+História Gerada pela IA 1: Gerenciamento Completo de Doações
+
+História gerada pela IA:
+
+“Como doador, quero poder editar e cancelar minhas doações, receber notificações quando uma ONG demonstrar interesse e acompanhar todo o processo de retirada, para ter controle sobre minhas doações.”
+
+Problema identificado: A história agrupa diversas funcionalidades diferentes: edição, cancelamento, notificações e acompanhamento da retirada. Isso aumenta significativamente seu escopo e dificulta sua implementação e estimativa dentro de uma única Sprint.
+
+História após revisão:
+
+“Como doador, quero cancelar uma doação que ainda está disponível, para impedir que uma ONG reserve um alimento que não pode mais ser doado.”
+
+O que foi alterado e por quê: A história foi reduzida para tratar exclusivamente do cancelamento de uma doação. As funcionalidades de edição, notificações e acompanhamento podem ser transformadas em histórias independentes posteriormente. Dessa forma, a história fica menor, mais fácil de estimar e pode entregar valor de maneira independente.
+
+⸻
+
+História Gerada pela IA 2: Visualização Completa das Doações
+
+História gerada pela IA:
+
+“Como ONG, quero visualizar todas as informações importantes sobre as doações e os estabelecimentos responsáveis por elas, para escolher as melhores opções disponíveis.”
+
+Problema identificado: Expressões como “todas as informações importantes” e “melhores opções” são subjetivas e não especificam claramente quais dados devem ser apresentados. Isso dificulta a definição dos critérios de aceite e dos testes necessários para validar a funcionalidade.
+
+História após revisão:
+
+“Como ONG, quero visualizar o tipo, a quantidade e a data de validade de cada doação disponível, para avaliar se o alimento atende às necessidades da instituição antes de aceitá-lo.”
+
+O que foi alterado e por quê: Os termos subjetivos foram substituídos por informações específicas relacionadas às doações: tipo, quantidade e validade. Com isso, tornou-se possível determinar objetivamente quais informações precisam aparecer na interface e validar a funcionalidade por meio de testes.
+
+⸻
+
+História Gerada pela IA 3: Sistema Avançado de Busca
+
+História gerada pela IA:
+
+“Como ONG, quero pesquisar, filtrar e ordenar todas as doações por tipo de alimento, quantidade, validade, localização e estabelecimento doador, para encontrar rapidamente as melhores doações disponíveis.”
+
+Problema identificado: A história reúne diferentes mecanismos de consulta (pesquisa, filtros e ordenação) e diversos critérios em uma única funcionalidade. O escopo se torna grande e aumenta a quantidade de comportamentos que precisam ser implementados e testados simultaneamente.
+
+História após revisão:
+
+“Como ONG, quero filtrar as doações disponíveis pelo tipo de alimento, para encontrar mais rapidamente alimentos que atendam às necessidades da instituição.”
+
+O que foi alterado e por quê: Foi mantido somente o filtro por tipo de alimento, removendo pesquisa, ordenação e os demais critérios. Assim, a funcionalidade pode ser implementada de forma independente e posteriormente expandida com novos filtros conforme a necessidade dos usuários.
+
+⸻
+
+Análise do Uso da IA
+
+A utilização da IA foi útil para gerar rapidamente ideias de funcionalidades relacionadas ao domínio do sistema. Entretanto, as sugestões apresentaram problemas comuns na elaboração de histórias de usuário, principalmente histórias com escopo muito amplo e requisitos subjetivos.
+
+A revisão realizada pelo grupo buscou:
+
+* reduzir o escopo das histórias;
+* separar funcionalidades que poderiam ser desenvolvidas independentemente;
+* remover termos subjetivos ou ambíguos;
+* tornar os requisitos mais fáceis de estimar;
+* melhorar a possibilidade de criação de critérios de aceite e testes;
+* preservar o valor entregue ao usuário final.
+
+Dessa forma, as histórias geradas pela IA foram utilizadas como ponto de partida, enquanto a análise e o refinamento foram realizados pelo grupo antes de sua inclusão no backlog do projeto.
