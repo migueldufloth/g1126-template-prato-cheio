@@ -14,9 +14,9 @@ e a justificativa de cada item são de quem completa.*
 
 | # | Item pedido na atividade | Situação | Onde |
 |---|---|---|---|
-| 1 | 3 decisões que o caso exige, 2 alternativas cada | Decisão 1 ✅ feito · Decisões 2 e 3 `TODO` | ver §1 |
+| 1 | 3 decisões que o caso exige, 2 alternativas cada | ✅ feito (Decisões 1, 2 e 3) | ver §1 |
 | 2 | Tabela de trade-offs para uma decisão | ✅ feito (Decisão 1) | ver §2 |
-| 3 | Ligar cada decisão a um requisito/risco da Análise | Decisão 1 ✅ · Decisões 2 e 3 `TODO` (origem já apontada) | ver §3 |
+| 3 | Ligar cada decisão a um requisito/risco da Análise | ✅ feito (Decisões 1, 2 e 3) | ver §3 |
 
 ## 1. Três decisões de projeto e suas alternativas
 
@@ -48,31 +48,38 @@ de a expiração em si poder ser implementada — é um bom próximo incremento 
 do escopo desta atividade (que é só registrar a decisão, não implementá-la).
 
 ### Decisão 2 — Condição de corrida entre duas ONGs ao aceitar a mesma doação
-**Responsável: _a definir (sugestão: quem mexeu em `src/repositorio.js` no Trabalho 1)_ — `TODO`**
+**Responsável: Leonardo Lotério de Lima (@leonardosth) — ✅ completa**
 
 - **Origem:** regra de negócio "uma doação aceita não fica disponível para outra" + risco
   "duas ONGs aceitam a mesma doação ao mesmo tempo" (`docs/analise.md`, seção Riscos).
-- Alternativa 1: manter o lock otimista atual — `UPDATE ... WHERE status = 'disponivel'` em
-  `src/repositorio.js` (já implementado e testado; zero linhas mudam se a corrida for perdida).
-- Alternativa 2: fila de reserva com prazo — a ONG "reserva" a doação por alguns minutos antes
-  de confirmar, em vez de aceitar direto.
+- **Alternativa 1 — Manter o lock otimista atual:** `UPDATE ... WHERE status = 'disponivel'` em
+  `src/repositorio.js` (já implementado e testado; quem clica primeiro leva, quem clica depois recebe erro).
+- **Alternativa 2 — Fila de reserva com prazo:** a ONG "reserva" a doação por alguns minutos (ex.: 15 a 30 min)
+  antes de confirmar, dando tempo para organizar a retirada antes de assumir o compromisso final.
 
-`TODO`: escolher uma das duas (ou justificar por que manter a atual já é a decisão certa — não
-precisa trocar só por trocar), montar a justificativa e, se quiser, uma tabela de trade-offs
-própria (a atividade só exige uma tabela no total, então isso é opcional).
+**Decisão escolhida: Alternativa 2 — Fila de reserva com prazo.**
+No cenário real de operação das ONGs, dificilmente uma instituição tem motorista ou voluntário pronto para sair no instante exato em que a notificação surge. Se o aceite for imediato e definitivo (Alternativa 1), a ONG é empurrada para um dilema perigoso: ou aceita "no escuro" para não perder a doação e corre alto risco de não conseguir retirar (frustrando o doador e gerando comida estragada), ou hesita para verificar quem pode buscar e perde a doação por segundos para outra instituição.
+Com a reserva temporária, a ONG ganha uma janela de exclusividade (ex.: 15 a 30 minutos) para checar internamente se possui voluntário/transporte disponível. Confirmada a capacidade de busca, a ONG conclui o aceite formal; caso contrário, se desistir ou o prazo estourar sem confirmação, o item é liberado de volta para a lista de disponíveis sem prejuízo ao alimento.
+
+**O que isso implica no código (para quem for implementar na Unidade 2):**
+1. **Novo status no ciclo de vida:** inclusão do status `'reservada'` entre `'disponivel'` e `'aceita'`.
+2. **Schema do banco (`src/db.js`):** adição de colunas `reservada_em` e `reservada_por` na tabela `doacoes`.
+3. **Novas rotas / operações:**
+   - `POST /api/doacoes/:id/reservar`: executa `UPDATE doacoes SET status = 'reservada', reservada_por = ?, reservada_em = ... WHERE id = ? AND status = 'disponivel'`. O lock otimista continua sendo usado aqui para garantir a exclusividade no ato de reservar (quem tentar reservar uma doação já reservada ou aceita recebe erro 400).
+   - `POST /api/doacoes/:id/confirmar`: valida se a reserva ainda está no prazo e pertence à mesma ONG, alterando o status para `'aceita'`.
+4. **Tratamento de timeout:** assim como na Decisão 1, a expiração da reserva pode ser checada de forma "preguiçosa" (*lazy*) ao listar doações disponíveis (`WHERE status = 'disponivel' OR (status = 'reservada' AND datetime('now') > datetime(reservada_em, '+20 minutes'))`), liberando-a sem necessidade de agendador paralelo.
 
 ### Decisão 3 — Onde/como o PostgreSQL da Unidade 3 vai rodar
-**Responsável: _a definir_ — `TODO`**
+**Responsável: Leonardo Lotério de Lima (@leonardosth) — ✅ completa**
 
 - **Origem:** restrição "orçamento ~zero" + a troca de banco já anunciada no `README.md`
   ("Como o PostgreSQL vai subir é decisão do grupo").
-- Alternativa 1: instalar/rodar localmente ou em container Docker — grátis, mas cada integrante
-  precisa configurar o próprio ambiente.
-- Alternativa 2: serviço gerenciado gratuito (Neon, Supabase, Render) — acessível por qualquer
-  integrante via `DATABASE_URL`, mas depende de internet e da política de um terceiro.
+- **Alternativa 1 — Container Docker local:** rodar o PostgreSQL localmente via Docker / `docker-compose` — grátis, sem limites de provedores de nuvem e independente de conexão de internet.
+- **Alternativa 2 — Serviço gerenciado gratuito na nuvem (Neon, Supabase, Render):** banco hospedado acessível via internet por qualquer integrante via `DATABASE_URL`.
 
-`TODO`: escolher, justificar, e isso já pode virar a base do ADR da Unidade 2 sobre a migração
-de banco (que a disciplina pede de qualquer forma).
+**Decisão escolhida: Alternativa 1 — Container Docker local (revisitando para N3 ou se solicitado pelo professor).**
+Para as etapas de N1 e N2, manter a execução local via container Docker atende integralmente à restrição de orçamento zero e remove atritos comuns de tiers gratuitos de nuvem (como pausa da instância por inatividade / *cold start* de 30–50s, limites de requisições simultâneas ou falha de rede/internet durante execução de testes automatizados locais).
+O desacoplamento arquitetural já é assegurado pelo formato agnóstico de `DATABASE_URL` (seja `postgres://localhost:5432/...` local ou uma URL remota), mantendo o código de negócio intocado. O time revisitará a possibilidade de migrar para nuvem gerenciada para a N3 ou caso haja solicitação expressa do professor na avaliação da disciplina.
 
 ## 2. Tabela de trade-offs — Decisão 1
 
@@ -96,30 +103,22 @@ presa em `aceita` não ajuda ninguém e também não pode ser resgatada por outr
 automática ataca isso sem violar a restrição de orçamento/infraestrutura do piloto (não exige
 serviço novo, só um campo a mais no schema).
 
-**Decisão 2 (`TODO`):** justificar citando o risco "condição de corrida" e explicar por que a
-alternativa escolhida (manter o lock atual, ou trocar pela fila de reserva) atende melhor a
-regra de exclusividade de aceite.
+**Decisão 2 (completa):** a decisão ataca simultaneamente o risco de "duas ONGs aceitam a mesma doação ao mesmo tempo (condição de corrida)" e a incerteza prática levantada em `docs/analise.md` sobre a dinâmica real de atendimento das ONGs. No modelo de aceite direto, a concorrência técnica é resolvida, mas cria-se uma fricção operacional grave: a instituição é forçada a aceitar sem saber se tem capacidade de buscar a tempo ou hesita e perde o alimento. Ao adotar a fila de reserva com prazo, a exclusividade passa a ser garantida no ato da reserva (também via lock otimista atômico na transição para `reservada`), mas confere à ONG o tempo necessário para coordenar voluntários/veículos. Caso a ONG perceba que não poderá retirar ou o prazo expire, o item retorna ao estado `disponivel` antes do perecimento, equilibrando a regra de exclusividade com a eficiência logística do mundo real.
 
-**Decisão 3 (`TODO`):** justificar citando a restrição de orçamento ~zero e explicar o
-trade-off entre controle total (rodar localmente) e simplicidade de acesso para o grupo inteiro
-(serviço gerenciado).
+**Decisão 3 (completa):** a decisão conecta-se diretamente à restrição de "orçamento ~zero" (`docs/analise.md`, seção Stakeholders e Hipótese). Optar por rodar o PostgreSQL em container Docker localmente durante a N1 e N2 garante autonomia máxima ao grupo de desenvolvimento, eliminando instabilidades externas (latência, limites de conexões simultâneas ou adormecimento de instâncias gratuitas em nuvem como Render/Neon) e permitindo rodar testes e migrações mesmo offline. O acoplamento com o banco é evitado pelo uso da variável `DATABASE_URL` em `src/db.js`, de modo que a decisão de migrar para nuvem poderá ser revisitada na N3 sem retrabalho de código, caso o escopo de produção ou a avaliação da disciplina exijam.
 
 ## Divisão do trabalho
 
 | Item | Responsável | Status |
 |---|---|---|
 | Decisão 1 completa (§1, §2, parte de §3) | Miguel Angel Balladares Huertas | ✅ feito |
-| Decisão 2 (§1, §3) | _a definir_ | TODO |
-| Decisão 3 (§1, §3) | _a definir_ | TODO |
+| Decisão 2 (§1, §3) | Leonardo Lotério de Lima | ✅ feito |
+| Decisão 3 (§1, §3) | Leonardo Lotério de Lima | ✅ feito |
 | Revisão e aprovação do PR | _a definir_ (outro integrante, não quem escreveu) | TODO |
 
 ## Uso de IA
 
-Nível declarado desta aula: IA para consulta. Usei o Claude para comparar as duas alternativas
-da Decisão 1, montar os critérios e a tabela de trade-offs, e organizar a redação. A escolha da
-alternativa (expiração automática, via checagem na consulta em vez de um scheduler) e o
-raciocínio de que ela resolve a lacuna que eu mesmo registrei na Aula 2 são meus — conferi
-contra o schema real em `src/db.js` e `src/repositorio.js` antes de fechar a decisão, o que
-revelou que falta a coluna `aceita_em` (ponto que também registrei acima como implicação para
-quem for implementar depois). Não usei a IA para decidir nem justificar as Decisões 2 e 3 —
-essas ficam em aberto para os colegas completarem com o próprio raciocínio.
+Nível declarado desta aula: IA para consulta.
+
+- **Decisão 1:** Miguel Balladares usou o Claude para comparar as duas alternativas da Decisão 1, montar os critérios e a tabela de trade-offs, e organizar a redação. A escolha da alternativa (expiração automática, via checagem na consulta) e a identificação da coluna `aceita_em` no schema real foram feitas pelo integrante.
+- **Decisões 2 e 3:** Leonardo Lotério usou a IA para analisar a situação técnica do projeto (inexistência de carrinho e natureza atômica do aceite atual), mapear os riscos de negócio para o doador e para a ONG, e levantar as implicações no schema (`src/db.js`) e endpoints da Unidade 2. As decisões de adotar a reserva temporária com prazo (priorizando a viabilidade logística da ONG de organizar a coleta sem aceitar "no escuro") e de manter o PostgreSQL em Docker local para N1/N2 (com revisão na N3) foram decididas pelo integrante, assim como as justificativas baseadas nos requisitos de `docs/analise.md`.
