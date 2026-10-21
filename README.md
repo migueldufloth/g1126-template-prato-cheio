@@ -12,6 +12,10 @@ Conecta doadores de alimentos excedentes a ONGs, antes que a comida se perca.
 - Lucas Honorato dos Santos — @honoratoog
 - Leonardo Lotério de Lima — @leonardosth
 
+## Diagramas
+
+Atividade de diagramas UML (estados da doação e sequência do aceite): [docs/diagramas/README.md](docs/diagramas/README.md).
+
 ## Como rodar
 
 Requisito: **Node.js 22.13 ou superior**. Mais nada — o banco da Unidade 1 é SQLite, embutido no próprio Node.
