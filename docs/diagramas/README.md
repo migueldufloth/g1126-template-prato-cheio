@@ -11,7 +11,7 @@ Atividade em que o grupo gera dois diagramas UML do Prato Cheio com apoio de IA,
 
 ## Ferramenta de IA utilizada
 
-`<PREENCHER>`
+Claude Sonnet 5.5 (Anthropic)
 
 ## Diagramas escolhidos
 
