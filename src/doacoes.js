@@ -30,3 +30,27 @@ export async function aceitar(id, ong) {
   if (!atualizada) throw new Error(ERRO_JA_ACEITA);
   return atualizada;
 }
+
+// Decisão 2 (Aula 6) — "uma ONG reserva uma doação temporariamente".
+export async function reservar(id, ong) {
+  const doacao = await repo.buscarPorId(id);
+  if (!doacao) throw new Error('doação não encontrada');
+  if (doacao.status !== 'disponivel') throw new Error('doação não está disponível para reserva');
+
+  const atualizada = await repo.reservar(id, ong);
+  if (!atualizada) throw new Error('doação não está disponível para reserva');
+  return atualizada;
+}
+
+// Decisão 2 (Aula 6) — "uma ONG confirma a doação que reservou dentro do prazo".
+export async function confirmarReserva(id, ong) {
+  const doacao = await repo.buscarPorId(id);
+  if (!doacao) throw new Error('doação não encontrada');
+  if (doacao.status !== 'reservada') throw new Error('doação não está em estado de reserva');
+  if (doacao.reservada_por !== ong) throw new Error('doação foi reservada por outra ONG');
+
+  const atualizada = await repo.confirmarReserva(id, ong);
+  if (!atualizada) throw new Error('reserva expirada ou inválida');
+  return atualizada;
+}
+
