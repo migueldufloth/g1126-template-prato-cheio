@@ -16,8 +16,19 @@ export async function criarDoacao({ tipo, quantidade, validade } = {}) {
 }
 
 // História zero — "uma ONG vê as doações disponíveis".
-export async function listarDisponiveis() {
-  return repo.listarDisponiveis();
+// História 6 (Entrega 2) — "uma ONG filtra as doações disponíveis por tipo de alimento".
+// Critérios: filtro opcional e parcial; texto vazio equivale a sem filtro;
+// filtro inválido (não é texto ou passa de 50 caracteres) é recusado.
+const TAMANHO_MAX_FILTRO = 50;
+
+export async function listarDisponiveis({ tipo } = {}) {
+  if (tipo !== undefined) {
+    if (typeof tipo !== 'string') throw new Error('filtro de tipo inválido');
+    if (tipo.trim().length > TAMANHO_MAX_FILTRO) {
+      throw new Error(`filtro de tipo deve ter no máximo ${TAMANHO_MAX_FILTRO} caracteres`);
+    }
+  }
+  return repo.listarDisponiveis({ tipo: tipo?.trim() });
 }
 
 // História zero — "uma ONG aceita uma doação".
