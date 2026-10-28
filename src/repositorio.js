@@ -19,8 +19,21 @@ export async function atualizarExpiradas() {
   `);
 }
 
-export async function listarDisponiveis() {
+// História 6 (Entrega 2) — "ONG filtra as doações disponíveis por tipo de alimento".
+// O filtro é parcial e sem diferença de maiúsculas/minúsculas. Os curingas do
+// LIKE (% e _) digitados pelo usuário são escapados, para valerem como texto.
+export async function listarDisponiveis({ tipo } = {}) {
   await atualizarExpiradas();
+  if (tipo) {
+    const padrao = `%${tipo.toLowerCase().replace(/[\\%_]/g, '\\$&')}%`;
+    const { rows } = await query(
+      `SELECT * FROM doacoes
+       WHERE status = 'disponivel' AND LOWER(tipo) LIKE ? ESCAPE '\\'
+       ORDER BY id`,
+      [padrao]
+    );
+    return rows;
+  }
   const { rows } = await query(
     `SELECT * FROM doacoes WHERE status = 'disponivel' ORDER BY id`
   );

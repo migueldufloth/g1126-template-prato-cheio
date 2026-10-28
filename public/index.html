@@ -30,6 +30,8 @@
   </fieldset>
 
   <h2>Doações disponíveis</h2>
+  <label for="filtroTipo">Filtrar por tipo de alimento</label>
+  <input id="filtroTipo" type="search" maxlength="50" placeholder="Ex.: sopa">
   <ul id="lista"></ul>
 
   <h2>Confirmar reserva ativa (Decisão 2 - Aula 6)</h2>
@@ -43,16 +45,29 @@
   </fieldset>
 
   <script>
+    // Escapa texto digitado por usuários antes de usar em innerHTML (evita XSS).
+    function esc(texto) {
+      return String(texto ?? '').replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+
     async function carregar() {
-      const res = await fetch('/api/doacoes');
+      const filtro = document.getElementById('filtroTipo').value.trim();
+      const url = filtro ? `/api/doacoes?tipo=${encodeURIComponent(filtro)}` : '/api/doacoes';
+      const res = await fetch(url);
       const doacoes = await res.json();
       const lista = document.getElementById('lista');
+      if (!res.ok) {
+        lista.innerHTML = `<li>Erro: ${esc(doacoes.erro || 'falha ao listar')}</li>`;
+        return;
+      }
       lista.innerHTML = doacoes.length
         ? ''
-        : '<li>Nenhuma doação disponível no momento.</li>';
+        : `<li>${filtro ? 'Nenhuma doação disponível desse tipo.' : 'Nenhuma doação disponível no momento.'}</li>`;
       for (const d of doacoes) {
         const li = document.createElement('li');
-        li.innerHTML = `<strong>#${d.id} - ${d.tipo}</strong> — ${d.quantidade} (validade: ${d.validade})<br>`;
+        li.innerHTML = `<strong>#${d.id} - ${esc(d.tipo)}</strong> — ${esc(d.quantidade)} (validade: ${esc(d.validade)})<br>`;
         
         const btnReservar = document.createElement('button');
         btnReservar.textContent = 'Reservar (tolerância 20 min)';
@@ -164,6 +179,8 @@
         alert('Erro ao confirmar: ' + (json.erro || 'Falha na confirmação'));
       }
     };
+
+    document.getElementById('filtroTipo').oninput = carregar;
 
     carregar();
   </script>
