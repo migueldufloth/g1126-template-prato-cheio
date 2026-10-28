@@ -32,6 +32,16 @@
   <h2>Doações disponíveis</h2>
   <ul id="lista"></ul>
 
+  <h2>Confirmar reserva ativa (Decisão 2 - Aula 6)</h2>
+  <fieldset>
+    <legend>Confirmar coleta da doação reservada</legend>
+    <label for="idReserva">ID da doação reservada</label>
+    <input id="idReserva" type="number" placeholder="Ex.: 1">
+    <label for="ongConfirmar">Nome da ONG que reservou</label>
+    <input id="ongConfirmar" placeholder="Ex.: ONG Esperança">
+    <button id="btnConfirmar" type="button">Confirmar Coleta</button>
+  </fieldset>
+
   <script>
     async function carregar() {
       const res = await fetch('/api/doacoes');
@@ -39,36 +49,97 @@
       const lista = document.getElementById('lista');
       lista.innerHTML = doacoes.length
         ? ''
-        : '<li>Nenhuma doação disponível.</li>';
+        : '<li>Nenhuma doação disponível no momento.</li>';
       for (const d of doacoes) {
         const li = document.createElement('li');
-        li.textContent = `${d.tipo} — ${d.quantidade} (até ${d.validade}) `;
-        const botao = document.createElement('button');
-        botao.textContent = 'Aceitar';
-        botao.onclick = async () => {
-          await fetch(`/api/doacoes/${d.id}/aceitar`, {
+        li.innerHTML = `<strong>#${d.id} - ${d.tipo}</strong> — ${d.quantidade} (validade: ${d.validade})<br>`;
+        
+        const btnReservar = document.createElement('button');
+        btnReservar.textContent = 'Reservar (tolerância 20 min)';
+        btnReservar.style.backgroundColor = '#f0ad4e';
+        btnReservar.onclick = async () => {
+          const ong = prompt('Informe o nome da ONG para a reserva:', 'ONG Esperança');
+          if (!ong) return;
+          const r = await fetch(`/api/doacoes/${d.id}/reservar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ong: 'Minha ONG' })
+            body: JSON.stringify({ ong })
           });
+          const json = await r.json();
+          if (r.ok) {
+            alert(`Doação #${d.id} reservada com sucesso para ${ong}! Guarde o ID para confirmar a coleta.`);
+          } else {
+            alert('Erro: ' + (json.erro || 'Falha ao reservar'));
+          }
           carregar();
         };
-        li.appendChild(botao);
+
+        const btnAceitar = document.createElement('button');
+        btnAceitar.textContent = 'Aceitar Imediato';
+        btnAceitar.onclick = async () => {
+          const ong = prompt('Informe o nome da ONG:', 'ONG Esperança');
+          if (!ong) return;
+          const r = await fetch(`/api/doacoes/${d.id}/aceitar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ong })
+          });
+          const json = await r.json();
+          if (r.ok) {
+            alert(`Doação #${d.id} aceita com sucesso por ${ong}!`);
+          } else {
+            alert('Erro: ' + (json.erro || 'Falha ao aceitar'));
+          }
+          carregar();
+        };
+
+        li.appendChild(btnReservar);
+        li.appendChild(btnAceitar);
         lista.appendChild(li);
       }
     }
 
     document.getElementById('publicar').onclick = async () => {
-      await fetch('/api/doacoes', {
+      const tipo = document.getElementById('tipo').value;
+      const quantidade = document.getElementById('quantidade').value;
+      const validade = document.getElementById('validade').value;
+      const res = await fetch('/api/doacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: document.getElementById('tipo').value,
-          quantidade: document.getElementById('quantidade').value,
-          validade: document.getElementById('validade').value
-        })
+        body: JSON.stringify({ tipo, quantidade, validade })
       });
-      carregar();
+      if (res.ok) {
+        document.getElementById('tipo').value = '';
+        document.getElementById('quantidade').value = '';
+        document.getElementById('validade').value = '';
+        carregar();
+      } else {
+        const json = await res.json();
+        alert('Erro ao publicar: ' + json.erro);
+      }
+    };
+
+    document.getElementById('btnConfirmar').onclick = async () => {
+      const id = document.getElementById('idReserva').value;
+      const ong = document.getElementById('ongConfirmar').value;
+      if (!id || !ong) {
+        alert('Preencha o ID e o nome da ONG.');
+        return;
+      }
+      const res = await fetch(`/api/doacoes/${id}/confirmar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ong })
+      });
+      const json = await res.json();
+      if (res.ok) {
+        alert(`Reserva da doação #${id} confirmada com sucesso! Status atualizado para 'aceita'.`);
+        document.getElementById('idReserva').value = '';
+        document.getElementById('ongConfirmar').value = '';
+        carregar();
+      } else {
+        alert('Erro ao confirmar: ' + (json.erro || 'Falha na confirmação'));
+      }
     };
 
     carregar();

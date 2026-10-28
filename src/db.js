@@ -35,15 +35,19 @@ export async function query(sql, valores = []) {
 export async function migrar() {
   conexao().exec(`
     CREATE TABLE IF NOT EXISTS doacoes (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo        TEXT NOT NULL,
-      quantidade  TEXT NOT NULL,
-      validade    TEXT NOT NULL,
-      status      TEXT NOT NULL DEFAULT 'disponivel',
-      ong         TEXT,
-      criada_em   TEXT NOT NULL DEFAULT (datetime('now'))
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo          TEXT NOT NULL,
+      quantidade    TEXT NOT NULL,
+      validade      TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'disponivel',
+      ong           TEXT,
+      reservada_por TEXT,
+      reservada_em  TEXT,
+      criada_em     TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_por TEXT;`); } catch {}
+  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_em TEXT;`); } catch {}
 }
 
 /** Apaga todos os dados. Usado pelos testes. */

@@ -33,5 +33,21 @@ export function criarApp() {
     }
   });
 
+  app.post('/api/doacoes/:id/reservar', async (req, res) => {
+    try {
+      res.json(await doacoes.reservar(req.params.id, req.body?.ong ?? 'ONG'));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
+  app.post('/api/doacoes/:id/confirmar', async (req, res) => {
+    try {
+      res.json(await doacoes.confirmarReserva(req.params.id, req.body?.ong ?? 'ONG'));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
   return app;
 }
