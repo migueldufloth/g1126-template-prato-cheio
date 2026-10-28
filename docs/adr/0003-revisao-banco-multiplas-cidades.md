@@ -65,4 +65,13 @@ Preservamos a ADR-0002 como histórico: ela registra por que escolhemos PostgreS
 - **Latência de rede** entre aplicação e banco. *Mitigação:* escolher região próxima e evitar consultas em excesso.
 - **Diferença entre ambientes** (local x produção). *Mitigação:* mesma versão do PostgreSQL no Docker e no provedor.
 **Quando reavaliar:** se o volume exceder os limites do plano escolhido, se o custo ou a disponibilidade do provedor virarem problema, ou se surgirem necessidades como réplicas de leitura (não previstas agora, por não haver evidência de que sejam necessárias).
- 
+
+## Estado da implementação (Entrega 2)
+
+- Esta ADR é a **revisão prevista** na Decisão 3 da Aula 06 (`docs/atividades/aula06.md`), que manteve o PostgreSQL em Docker local para a N1 e a N2 e deixou a hospedagem para ser revisitada. **A mudança de hospedagem ainda não foi executada:** hoje o código roda em SQLite, e o provedor gerenciado só será escolhido e configurado na Unidade 3 (a escolha do provedor continua aberta).
+- **O que já existe e sustenta a decisão:** os testes de concorrência (duas reservas simultâneas e cancelar × reservar), que mostram que as mudanças de status são atômicas; e o acesso ao banco concentrado em `src/db.js` e `src/repositorio.js`, que limita a troca de banco a essas duas camadas.
+- **O que falta (trabalho decorrente):** índices, filtro por cidade, paginação, pool de conexões e `timestamptz`, listados em "Consequências". Hoje a tabela `doacoes` nem tem a coluna cidade.
+
+## Rastreabilidade
+
+Responde ao novo cenário (várias cidades, acessos simultâneos, mais volume), revisa o [ADR 0002](0002-migrar-sqlite-para-postgresql.md) e mantém coerência com o `docs/analise.md` (risco de volume que cresce e a listagem simples não escala).

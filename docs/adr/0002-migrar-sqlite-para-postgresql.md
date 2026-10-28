@@ -55,6 +55,17 @@ A migração fica barata de executar porque o `src/db.js` já isola o acesso ao 
 **O que perdemos / riscos**
  
 - Simplicidade: antes era só `npm install`; agora todo mundo precisa de Docker (ou outro caminho) funcionando. *Mitigação:* documentar o passo a passo no README e fornecer um `docker-compose.yml`.
-- Parte do SQL e do schema terá de ser reescrita (placeholders, tipos, auto incremento). *Mitigação:* os 6 testes existentes servem de prova de que o comportamento se manteve.
+- Parte do SQL e do schema terá de ser reescrita (placeholders, tipos, auto incremento). *Mitigação:* a suíte de testes existente serve de prova de que o comportamento se manteve.
 - Testes deixam de rodar em memória e o CI fica mais lento. *Mitigação:* usar service container no CI e limpar as tabelas entre testes.
 - Mais um componente que pode falhar (conexão, credenciais). *Mitigação:* rota de saúde verificando o banco e `.env.example` atualizado.
+
+## Estado da implementação (Entrega 2)
+
+- **A decisão está aceita; a execução da migração está prevista para a Unidade 3**, como define o `README`. Nesta entrega o código **continua em SQLite** (`node:sqlite`).
+- **O que já reflete a decisão no código:** todo acesso ao banco passa por `query()` em `src/db.js`, e o SQL fica em `src/repositorio.js`. As regras de negócio (`src/doacoes.js`) não conhecem o banco. As operações da Entrega 2 usam `UPDATE` condicional atômico e SQL parametrizado. **Mas o `repositorio.js` ainda tem SQL que só funciona no SQLite** (por exemplo `datetime('now', '+20 minutes')` na expiração da reserva), então a migração também vai mexer nele, não só no `db.js`.
+- **O que terá de mudar na migração:** o marcador `?` (vira `$1`, `$2`...), o `AUTOINCREMENT`, `datetime('now')`, o `ALTER TABLE` dentro de `try/catch` em `migrar()` e a contagem de linhas alteradas (`info.changes` vira `rowCount`).
+- **Como saberemos que deu certo:** os testes de API passam sem alteração, inclusive as corridas (duas reservas simultâneas e cancelar × reservar).
+
+## Rastreabilidade
+
+Atende ao risco "duas ONGs aceitam a mesma doação ao mesmo tempo" (`docs/analise.md`), à Decisão 3 da Aula 06 (`docs/atividades/aula06.md`), à exigência de PostgreSQL na Unidade 3 (`README.md`) e dá sequência ao [ADR 0001](0001-escolha-da-stack.md), que já previa a troca de banco.
