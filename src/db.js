@@ -43,11 +43,16 @@ export async function migrar() {
       ong           TEXT,
       reservada_por TEXT,
       reservada_em  TEXT,
+      cancelada_em  TEXT,
+      motivo_cancelamento TEXT,
       criada_em     TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
   try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_por TEXT;`); } catch {}
   try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_em TEXT;`); } catch {}
+  // História 2: colunas do cancelamento (bancos criados antes desta versão).
+  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN cancelada_em TEXT;`); } catch {}
+  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN motivo_cancelamento TEXT;`); } catch {}
 }
 
 /** Apaga todos os dados. Usado pelos testes. */
