@@ -71,3 +71,18 @@ export async function confirmarReserva(id, ong) {
   if (alteradas === 0) return undefined;
   return buscarPorId(id);
 }
+
+// História 2 (Entrega 2): cancelamento pelo doador.
+// Mesmo padrão do aceite e da reserva: o `AND status = 'disponivel'` torna a
+// operação atômica, então cancelar e reservar ao mesmo tempo não dão certo os dois.
+export async function cancelar(id, motivo) {
+  await atualizarExpiradas();
+  const { alteradas } = await query(
+    `UPDATE doacoes
+     SET status = 'cancelada', cancelada_em = datetime('now'), motivo_cancelamento = ?
+     WHERE id = ? AND status = 'disponivel'`,
+    [motivo, id]
+  );
+  if (alteradas === 0) return undefined;
+  return buscarPorId(id);
+}

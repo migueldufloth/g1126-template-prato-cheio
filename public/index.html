@@ -93,8 +93,31 @@
           carregar();
         };
 
+        // História 2: o doador cancela a doação enquanto ela ainda está disponível.
+        const btnCancelar = document.createElement('button');
+        btnCancelar.textContent = 'Cancelar doação (doador)';
+        btnCancelar.style.backgroundColor = '#d9534f';
+        btnCancelar.style.color = '#fff';
+        btnCancelar.onclick = async () => {
+          if (!confirm(`Cancelar a doação #${d.id} (${d.tipo})? Ela sai da lista e nenhuma ONG poderá reservá-la.`)) return;
+          const motivo = prompt('Motivo do cancelamento (opcional):', '') ?? '';
+          const r = await fetch(`/api/doacoes/${d.id}/cancelar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo })
+          });
+          const json = await r.json();
+          if (r.ok) {
+            alert(`Doação #${d.id} cancelada.`);
+          } else {
+            alert('Erro: ' + (json.erro || 'Falha ao cancelar'));
+          }
+          carregar();
+        };
+
         li.appendChild(btnReservar);
         li.appendChild(btnAceitar);
+        li.appendChild(btnCancelar);
         lista.appendChild(li);
       }
     }

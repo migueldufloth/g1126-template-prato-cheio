@@ -49,5 +49,14 @@ export function criarApp() {
     }
   });
 
+  // História 2: o doador cancela uma doação que ainda está disponível.
+  app.post('/api/doacoes/:id/cancelar', async (req, res) => {
+    try {
+      res.json(await doacoes.cancelar(req.params.id, { motivo: req.body?.motivo }));
+    } catch (erro) {
+      res.status(400).json({ erro: erro.message });
+    }
+  });
+
   return app;
 }

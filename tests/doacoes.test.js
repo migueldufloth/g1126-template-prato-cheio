@@ -222,3 +222,137 @@ describe('reservar e confirmar doação (Decisão 2 - Aula 6)', () => {
   });
 });
 
+
+describe('doador cancela uma doação (História 2 - Entrega 2)', () => {
+  beforeEach(async () => { await migrar(); await limparBanco(); });
+  afterAll(async () => { await encerrar(); });
+
+  async function publicar() {
+    const res = await request(app)
+      .post('/api/doacoes')
+      .send({ tipo: 'Pão francês', quantidade: '30 unidades', validade: '2026-08-03' });
+    return res.body.id;
+  }
+
+  // Critério 1
+  it('cancela uma doação disponível e registra data e motivo', async () => {
+    const id = await publicar();
+
+    const res = await request(app)
+      .post(`/api/doacoes/${id}/cancelar`)
+      .send({ motivo: 'alimento estragou no estoque' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('cancelada');
+    expect(res.body.cancelada_em).toBeTruthy();
+    expect(res.body.motivo_cancelamento).toBe('alimento estragou no estoque');
+  });
+
+  it('aceita cancelar sem informar motivo', async () => {
+    const id = await publicar();
+
+    const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('cancelada');
+    expect(res.body.motivo_cancelamento).toBeNull();
+  });
+
+  // Critério 2
+  it('remove a doação cancelada da lista de disponíveis', async () => {
+    const id = await publicar();
+    await publicar();
+
+    await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    const lista = await request(app).get('/api/doacoes');
+    expect(lista.body).toHaveLength(1);
+    expect(lista.body.map((d) => d.id)).not.toContain(id);
+  });
+
+  // Critério 3
+  it('impede que uma ONG reserve ou aceite uma doação cancelada', async () => {
+    const id = await publicar();
+    await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    const reserva = await request(app).post(`/api/doacoes/${id}/reservar`).send({ ong: 'ONG Resgate' });
+    const aceite = await request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Resgate' });
+
+    expect(reserva.status).toBe(400);
+    expect(reserva.body.erro).toBe('doação foi cancelada pelo doador');
+    expect(aceite.status).toBe(400);
+    expect(aceite.body.erro).toBe('doação foi cancelada pelo doador');
+  });
+
+  // Critério 4
+  it('recusa cancelar uma doação com reserva ativa', async () => {
+    const id = await publicar();
+    await request(app).post(`/api/doacoes/${id}/reservar`).send({ ong: 'ONG Resgate' });
+
+    const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('doação está reservada por uma ONG e não pode ser cancelada');
+
+    // A reserva continua valendo: a ONG ainda consegue confirmar.
+    const confirmar = await request(app).post(`/api/doacoes/${id}/confirmar`).send({ ong: 'ONG Resgate' });
+    expect(confirmar.status).toBe(200);
+  });
+
+  it('recusa cancelar uma doação já aceita', async () => {
+    const id = await publicar();
+    await request(app).post(`/api/doacoes/${id}/aceitar`).send({ ong: 'ONG Esperança' });
+
+    const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('doação já foi aceita por uma ONG e não pode ser cancelada');
+  });
+
+  // Critério 5
+  it('recusa cancelar uma doação inexistente', async () => {
+    const res = await request(app).post('/api/doacoes/9999/cancelar').send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('doação não encontrada');
+  });
+
+  it('recusa cancelar duas vezes a mesma doação', async () => {
+    const id = await publicar();
+    await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toBe('doação já foi cancelada');
+  });
+
+  // Critério 6
+  it('permite cancelar depois que a reserva expirou', async () => {
+    const id = await publicar();
+    await request(app).post(`/api/doacoes/${id}/reservar`).send({ ong: 'ONG Resgate' });
+
+    const { query } = await import('../src/db.js');
+    await query("UPDATE doacoes SET reservada_em = datetime('now', '-30 minutes') WHERE id = ?", [id]);
+
+    const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('cancelada');
+  });
+
+  // Critério 7
+  it('quando cancelamento e reserva chegam juntos, só um dos dois acontece', async () => {
+    const id = await publicar();
+
+    const [cancelamento, reserva] = await Promise.all([
+      request(app).post(`/api/doacoes/${id}/cancelar`).send({}),
+      request(app).post(`/api/doacoes/${id}/reservar`).send({ ong: 'ONG A' }),
+    ]);
+
+    expect([cancelamento.status, reserva.status].sort()).toEqual([200, 400]);
+    const { query } = await import('../src/db.js');
+    const { rows } = await query('SELECT status FROM doacoes WHERE id = ?', [id]);
+    expect(['cancelada', 'reservada']).toContain(rows[0].status);
+  });
+});
