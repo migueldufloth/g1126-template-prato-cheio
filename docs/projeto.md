@@ -115,4 +115,5 @@ coerente com o código.
 ## 7. Uso de IA
 
 - **História 5 e este rascunho:** Miguel Balladares usou o Claude (modelo Claude Opus 5.5) para implementar o cancelamento, escrever os testes e rascunhar este documento a partir do código e dos documentos do repositório. A escolha da história, das regras (só cancelar `disponivel`, manter o registro em vez de apagar) e a revisão foram do integrante.
+- **Diagramas, retrospectiva e revisão de PRs:** Miguel Dufloth usou IA como apoio para organizar o contexto do caso (`docs/diagramas/contexto-ia.md`), rascunhar o README da atividade de diagramas e a retrospectiva (`docs/retrospectivas/2.md`), e ler os PRs #12 e #13 antes de revisar. Conferi tudo contra o repositório, rodei os testes das branches revisadas e ajustei o texto. A escolha dos diagramas e as aprovações foram minhas.
 - `TODO (grupo):` cada integrante acrescenta como usou IA nas suas partes (reserva, ADRs, diagramas).
