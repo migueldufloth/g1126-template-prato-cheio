@@ -57,7 +57,7 @@ stateDiagram-v2
 
     disponivel --> reservada : ONG reserva temporariamente [status = disponivel]
     reservada --> aceita : mesma ONG confirma coleta [dentro de 20 min]
-    reservada --> disponivel : prazo de 20 min expira (checagem lazy) ou ONG desiste
+    reservada --> disponivel : prazo de 20 min expira (checagem lazy)
     reservada --> reservada : outra ONG tenta reservar ou confirmar / recusado (HTTP 400)
 
     disponivel --> cancelada : doador cancela doação [status = disponivel]
