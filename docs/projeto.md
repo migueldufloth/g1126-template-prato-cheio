@@ -70,7 +70,7 @@ stateDiagram-v2
 ```
 
 Diagramas completos da atividade anterior: [`docs/diagramas/`](diagramas/README.md).
-O diagrama de `docs/diagramas/estados-doacao.md` foi entregue na atividade anterior, antes do cancelamento, e ainda não tem o estado `cancelada`. O diagrama acima é a versão atual do ciclo de vida.
+O diagrama de [`docs/diagramas/estados-doacao.md`](diagramas/estados-doacao.md) foi consolidado por Leonardo Lotério na Entrega 2 para refletir os estados `reservada` e `cancelada`.
 
 ## 3. Decisões de projeto
 
@@ -127,3 +127,4 @@ não fica só no `db.js`, porque o `repositorio.js` usa SQL específico do SQLit
 - **História 5 e este rascunho:** Miguel Balladares usou o Claude (modelo Claude Opus 5.5) para implementar o cancelamento, escrever os testes e rascunhar este documento a partir do código e dos documentos do repositório. A escolha da história, das regras (só cancelar `disponivel`, manter o registro em vez de apagar) e a revisão foram do integrante.
 - **Diagramas, retrospectiva e revisão de PRs:** Miguel Dufloth usou IA como apoio para organizar o contexto do caso (`docs/diagramas/contexto-ia.md`), rascunhar o README da atividade de diagramas e a retrospectiva (`docs/retrospectivas/2.md`), e ler os PRs #12 e #13 antes de revisar. Conferi tudo contra o repositório, rodei os testes das branches revisadas e ajustei o texto. A escolha dos diagramas e as aprovações foram minhas.
 - **História 6, ADRs 0002 e 0003 e o fechamento deste documento:** Lucas Honorato usou o Claude para rascunhar o filtro por tipo e seus testes, o ajuste dos ADRs ao código e este fechamento, e para apontar a falha de XSS na lista. Rodei os testes, conferi os ADRs contra o repositório, testei o filtro na tela e revisei o PR do cancelamento. As decisões (deixar claro que a migração ainda não foi executada, limitar o filtro a 50 caracteres) foram do grupo.
+- **História 4 (reserva com prazo), testes de concorrência e versões finais dos diagramas:** Leonardo Lotério usou IA (Claude Sonnet 5.5 e Gemini) como apoio para rascunhar o fluxo da reserva temporária e a modelagem inicial dos diagramas. A implementação do lock condicional atômico no SQLite, a checagem lazy de expiração (20 min), os testes de concorrência com Promise.all e a evolução dos diagramas de estados e sequência foram feitos e revisados pelo integrante.
