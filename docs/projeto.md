@@ -2,21 +2,22 @@
 
 *Entrega 2 (N2) · Evolução do Projeto Prato Cheio · branch de entrega: `entrega-2`*
 
-> **Rascunho** feito por Miguel Balladares Huertas (@miguettohuertas). Os itens marcados com
-> `TODO` ficam para o grupo completar e revisar no PR.
+> Rascunho inicial de Miguel Balladares Huertas (@miguettohuertas), completado e revisado pelo
+> grupo nos Pull Requests da Entrega 2.
 
 ## 1. Histórias implementadas nesta entrega
 
 As histórias 1 a 3 (publicar, listar e aceitar) são o walking skeleton da Unidade 1 e estão em
-[`docs/analise.md`](analise.md). Nesta entrega o grupo implementou duas histórias novas.
+[`docs/analise.md`](analise.md). Nesta entrega o grupo implementou três histórias novas (4, 5 e 6).
 
 | # | História | Responsável | PR | Testes |
 |---|---|---|---|---|
 | 4 | Como **ONG**, quero reservar uma doação disponível por um prazo curto e depois confirmar, para organizar a retirada sem perder a doação para outra instituição. | Leonardo Lotério de Lima | #10 | `reservar e confirmar doação` (8 testes) |
-| 5 | Como **doador**, quero cancelar uma doação que ainda está disponível, para impedir que uma ONG reserve um alimento que não pode mais ser doado. | Miguel Angel Balladares Huertas | `TODO: nº do PR` | `doador cancela uma doação` (10 testes) |
+| 5 | Como **doador**, quero cancelar uma doação que ainda está disponível, para impedir que uma ONG reserve um alimento que não pode mais ser doado. | Miguel Angel Balladares Huertas | #11 | `doador cancela uma doação` (10 testes) |
+| 6 | Como **ONG**, quero filtrar as doações disponíveis pelo tipo de alimento, para encontrar mais rápido o que atende à instituição. | Lucas Honorato dos Santos | #12 | `filtrar doações por tipo de alimento` (9 testes, em `tests/filtro-tipo.test.js`) |
 
 A história 5 é a versão refinada da história gerada por IA na Aula 3 (`user-stories.md`, "Gerenciamento
-Completo de Doações"), reduzida só ao cancelamento.
+Completo de Doações"), reduzida só ao cancelamento. A história 6 é a versão refinada da história "Sistema Avançado de Busca" da mesma aula, reduzida ao filtro por tipo.
 
 ### Critérios de aceite — História 4 (reserva com prazo)
 
@@ -43,6 +44,17 @@ lista ganhou o botão "Cancelar doação (doador)".
 **Limitação conhecida:** como ainda não há autenticação (fora do escopo, ver `docs/analise.md`), o sistema
 não verifica se quem cancela é o doador que publicou. Isso fica registrado, não esquecido.
 
+### Critérios de aceite — História 6 (filtro por tipo)
+
+1. Dado doações disponíveis de tipos diferentes, quando a ONG filtra por um texto, então vê só as doações cujo tipo contém o texto, sem diferença de maiúsculas e minúsculas.
+2. Dado um filtro sem correspondência, então a lista vem vazia, sem erro.
+3. Dado nenhum filtro (ou filtro em branco), então todas as doações disponíveis aparecem.
+4. Dado doações canceladas, reservadas ou aceitas, então elas não aparecem, mesmo que o tipo combine.
+5. Dado um filtro com `%`, `_` ou aspas, então os caracteres valem como texto comum, sem curinga de SQL e sem injeção de SQL.
+6. Dado um filtro com mais de 50 caracteres, ou repetido na URL (`?tipo=a&tipo=b`), então o pedido é recusado com erro 400.
+
+Rota: `GET /api/doacoes?tipo=sopa`. Na tela, a lista ganhou um campo de filtro. O texto de doações exibido na lista agora é escapado antes de ir para a página (evita injetar HTML ou script).
+
 ## 2. Ciclo de vida da doação depois desta entrega
 
 ```mermaid
@@ -58,7 +70,7 @@ stateDiagram-v2
 ```
 
 Diagramas completos da atividade anterior: [`docs/diagramas/`](diagramas/README.md).
-`TODO (grupo):` decidir se atualizamos `docs/diagramas/estados-doacao.md` com o estado `cancelada`.
+O diagrama de `docs/diagramas/estados-doacao.md` foi entregue na atividade anterior, antes do cancelamento, e ainda não tem o estado `cancelada`. O diagrama acima é a versão atual do ciclo de vida.
 
 ## 3. Decisões de projeto
 
@@ -89,12 +101,11 @@ Ver [`docs/adr/`](adr/).
 | 0001 | Escolha da stack | Aceita |
 | 0002 | **Migração de SQLite para PostgreSQL** (ADR obrigatória) | Aceita, parcialmente substituída pela 0003 |
 | 0003 | Revisão do banco para várias cidades (hospedagem gerenciada) | Aceita |
-| 0004 | `TODO (grupo):` reserva com prazo e expiração preguiçosa (Decisões 2 e 3 acima) | A escrever |
 
-`TODO (grupo):` a ADR-0002 diz que a troca de banco "fica contida no `db.js`" e cita "os 6 testes". Hoje
-são 24 testes, e o `repositorio.js` usa SQL que só funciona no SQLite (marcador `?` e
-`datetime('now', '+20 minutes')`), então a migração também vai mexer nele. Vale atualizar a ADR para ficar
-coerente com o código.
+Os ADRs 0002 e 0003 têm uma seção "Estado da implementação": a decisão de migrar para PostgreSQL está
+aceita, mas **a migração ainda não foi executada** e o código segue em SQLite. Também registram que a troca
+não fica só no `db.js`, porque o `repositorio.js` usa SQL específico do SQLite (marcador `?` e
+`datetime('now', '+20 minutes')`).
 
 ## 5. Requisitos não funcionais
 
@@ -106,14 +117,13 @@ coerente com o código.
 
 ## 6. Critérios de validação do projeto
 
-- `npm test` passa: 24 testes, cobrindo sucesso e erro de cada operação.
+- `npm test` passa: 33 testes, cobrindo sucesso e erro de cada operação.
 - O CI do GitHub Actions fica verde em todo PR (testes + aplicação subindo em `/api/saude`).
 - Todo PR é integrado só depois de um "Approve" de outro integrante.
 - Demo no vídeo: publicar → reservar → confirmar; publicar → cancelar → tentar reservar (erro).
-- `TODO (grupo):` revisar/completar.
 
 ## 7. Uso de IA
 
 - **História 5 e este rascunho:** Miguel Balladares usou o Claude (modelo Claude Opus 5.5) para implementar o cancelamento, escrever os testes e rascunhar este documento a partir do código e dos documentos do repositório. A escolha da história, das regras (só cancelar `disponivel`, manter o registro em vez de apagar) e a revisão foram do integrante.
 - **Diagramas, retrospectiva e revisão de PRs:** Miguel Dufloth usou IA como apoio para organizar o contexto do caso (`docs/diagramas/contexto-ia.md`), rascunhar o README da atividade de diagramas e a retrospectiva (`docs/retrospectivas/2.md`), e ler os PRs #12 e #13 antes de revisar. Conferi tudo contra o repositório, rodei os testes das branches revisadas e ajustei o texto. A escolha dos diagramas e as aprovações foram minhas.
-- `TODO (grupo):` cada integrante acrescenta como usou IA nas suas partes (reserva, ADRs, diagramas).
+- **História 6, ADRs 0002 e 0003 e o fechamento deste documento:** Lucas Honorato usou o Claude para rascunhar o filtro por tipo e seus testes, o ajuste dos ADRs ao código e este fechamento, e para apontar a falha de XSS na lista. Rodei os testes, conferi os ADRs contra o repositório, testei o filtro na tela e revisei o PR do cancelamento. As decisões (deixar claro que a migração ainda não foi executada, limitar o filtro a 50 caracteres) foram do grupo.
