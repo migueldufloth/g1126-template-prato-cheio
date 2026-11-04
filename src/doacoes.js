@@ -7,12 +7,13 @@ const ERRO_CANCELADA = 'doação foi cancelada pelo doador';
 
 // História zero — "um doador publica uma doação".
 // Critério: tipo, quantidade e validade são obrigatórios.
-export async function criarDoacao({ tipo, quantidade, validade } = {}) {
+export async function criarDoacao({ tipo, quantidade, validade, observacoes } = {}) {
   const faltando = CAMPOS_OBRIGATORIOS.filter((campo) => !{ tipo, quantidade, validade }[campo]);
   if (faltando.length > 0) {
     throw new Error(`campos obrigatórios ausentes: ${faltando.join(', ')}`);
   }
-  return repo.inserir({ tipo, quantidade, validade });
+  const obs = validarObservacoes(observacoes);
+  return repo.inserir({ tipo, quantidade, validade, observacoes: obs });
 }
 
 // História zero — "uma ONG vê as doações disponíveis".
@@ -90,4 +91,19 @@ export async function cancelar(id, { motivo } = {}) {
   // (por exemplo, uma ONG reservou). O UPDATE condicional não altera nada e recusamos.
   if (!atualizada) throw new Error('doação deixou de estar disponível e não pode ser cancelada');
   return atualizada;
+}
+
+// História 7 (Entrega 3) — "doador adiciona observações de retirada ao publicar".
+// Critérios: campo opcional; texto em branco equivale a sem observações;
+// não-texto ou mais de 200 caracteres é recusado.
+const TAMANHO_MAX_OBSERVACOES = 200;
+
+function validarObservacoes(observacoes) {
+  if (observacoes === undefined || observacoes === null) return null;
+  if (typeof observacoes !== 'string') throw new Error('observações inválidas');
+  const texto = observacoes.trim();
+  if (texto.length > TAMANHO_MAX_OBSERVACOES) {
+    throw new Error(`observações devem ter no máximo ${TAMANHO_MAX_OBSERVACOES} caracteres`);
+  }
+  return texto || null;
 }

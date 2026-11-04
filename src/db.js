@@ -42,6 +42,7 @@ export async function migrar() {
       criada_em           TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
+  await query('ALTER TABLE doacoes ADD COLUMN IF NOT EXISTS observacoes TEXT');
 }
 
 export async function limparBanco() {

@@ -3,10 +3,10 @@
 //   const { rows } = await query('SELECT * FROM doacoes WHERE id = ?', [id]);
 import { query } from './db.js';
 
-export async function inserir({ tipo, quantidade, validade }) {
+export async function inserir({ tipo, quantidade, validade, observacoes = null }) {
   const { rows } = await query(
-    `INSERT INTO doacoes (tipo, quantidade, validade) VALUES (?, ?, ?) RETURNING *`,
-    [tipo, quantidade, validade]
+    `INSERT INTO doacoes (tipo, quantidade, validade, observacoes) VALUES (?, ?, ?, ?) RETURNING *`,
+    [tipo, quantidade, validade, observacoes]
   );
   return rows[0];
 }
