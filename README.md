@@ -100,3 +100,18 @@ para PostgreSQL (Trabalho 3 — construção).
 A IA pode participar da produção, mas o grupo é responsável por verificar, testar,
 corrigir e **defender** o resultado. Registre em cada Pull Request o que foi gerado
 com IA e o que vocês alteraram.
+
+## Definição de pronto (DoD)
+
+Uma história só é considerada pronta quando:
+
+- [ ] Os critérios de aceite foram atendidos e demonstrados funcionando
+- [ ] Há teste automatizado do caminho feliz e de pelo menos um caso de erro
+- [ ] `npm test` passa localmente e o CI está verde no Pull Request
+- [ ] O PR foi revisado e aprovado por outro integrante do grupo
+- [ ] Regras de negócio ficam em `src/doacoes.js` e SQL fica só em `src/repositorio.js`
+- [ ] Toda mudança de status usa `UPDATE` condicional (`AND status = ...`) e tem teste de corrida (`Promise.all`) quando houver disputa possível
+- [ ] Cada mensagem de erro de regra de negócio está coberta por um teste
+- [ ] Nenhum segredo foi commitado (usar `.env` / `.env.example`)
+- [ ] Documentação afetada atualizada (README, `docs/`, ADR se houve decisão)
+- [ ] Uso de IA registrado no PR: o que foi gerado, o que mantivemos, o que mudamos e por quê
