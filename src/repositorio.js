@@ -15,7 +15,7 @@ export async function atualizarExpiradas() {
   await query(`
     UPDATE doacoes
     SET status = 'disponivel', reservada_por = NULL, reservada_em = NULL
-    WHERE status = 'reservada' AND datetime('now') > datetime(reservada_em, '+20 minutes')
+    WHERE status = 'reservada' AND now() > reservada_em + interval '20 minutes'
   `);
 }
 
@@ -64,7 +64,7 @@ export async function reservar(id, ong) {
   await atualizarExpiradas();
   const { alteradas } = await query(
     `UPDATE doacoes
-     SET status = 'reservada', reservada_por = ?, reservada_em = datetime('now')
+     SET status = 'reservada', reservada_por = ?, reservada_em = now()
      WHERE id = ? AND status = 'disponivel'`,
     [ong, id]
   );
@@ -92,7 +92,7 @@ export async function cancelar(id, motivo) {
   await atualizarExpiradas();
   const { alteradas } = await query(
     `UPDATE doacoes
-     SET status = 'cancelada', cancelada_em = datetime('now'), motivo_cancelamento = ?
+     SET status = 'cancelada', cancelada_em = now(), motivo_cancelamento = ?
      WHERE id = ? AND status = 'disponivel'`,
     [motivo, id]
   );

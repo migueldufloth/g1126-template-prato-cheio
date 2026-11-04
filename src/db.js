@@ -1,65 +1,53 @@
-// Conexão com o banco. Já vem pronto — não precisa mexer agora.
-//
-// UNIDADE 1: SQLite, embutido no Node (módulo `node:sqlite`) — nada para instalar.
-// UNIDADE 3: este arquivo será refatorado para PostgreSQL. A interface abaixo
-//            (`query` devolvendo `{ rows }`) foi desenhada para que a troca fique
-//            contida aqui, sem espalhar mudança pelo resto do código.
-// `node:sqlite` é módulo embutido do Node 22+. Carregado via createRequire porque
-// algumas ferramentas (como o Vite/Vitest) ainda não o reconhecem como embutido.
-import { createRequire } from 'node:module';
-const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite');
+// Conexão com o banco — PostgreSQL (Unidade 3).
+// A interface query(sql, valores) → { rows, alteradas } continua a mesma,
+// então repositorio.js segue usando `?` como marcador.
+import pg from 'pg';
 
-const ARQUIVO = process.env.DATABASE_FILE || 'dados.sqlite';
-
-let db;
+const { Pool } = pg;
+let pool;
 
 export function conexao() {
-  if (!db) db = new DatabaseSync(ARQUIVO);
-  return db;
+  if (!pool) {
+    if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL não definida');
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+  return pool;
 }
 
-/**
- * Executa uma consulta e devolve { rows }.
- * Use `?` como marcador de parâmetro (evita injeção de SQL):
- *   query('SELECT * FROM doacoes WHERE id = ?', [id])
- */
+// O PostgreSQL usa $1, $2... Convertemos aqui para não espalhar a mudança.
+// Limitação: o SQL não pode ter um `?` literal dentro de texto.
+function paraPostgres(sql) {
+  let n = 0;
+  return sql.replace(/\?/g, () => `$${++n}`);
+}
+
 export async function query(sql, valores = []) {
-  const stmt = conexao().prepare(sql);
-  const ehLeitura = /^\s*(select|with)/i.test(sql) || /returning/i.test(sql);
-  if (ehLeitura) return { rows: stmt.all(...valores) };
-  const info = stmt.run(...valores);
-  return { rows: [], alteradas: info.changes };
+  const r = await conexao().query(paraPostgres(sql), valores);
+  return { rows: r.rows, alteradas: r.rowCount };
 }
 
-/** Cria o schema, se ainda não existir. Rodado por `npm run db:migrar` e ao subir o servidor. */
 export async function migrar() {
-  conexao().exec(`
+  await query(`
     CREATE TABLE IF NOT EXISTS doacoes (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo          TEXT NOT NULL,
-      quantidade    TEXT NOT NULL,
-      validade      TEXT NOT NULL,
-      status        TEXT NOT NULL DEFAULT 'disponivel',
-      ong           TEXT,
-      reservada_por TEXT,
-      reservada_em  TEXT,
-      cancelada_em  TEXT,
+      id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      tipo                TEXT NOT NULL,
+      quantidade          TEXT NOT NULL,
+      validade            TEXT NOT NULL,
+      status              TEXT NOT NULL DEFAULT 'disponivel',
+      ong                 TEXT,
+      reservada_por       TEXT,
+      reservada_em        TIMESTAMPTZ,
+      cancelada_em        TIMESTAMPTZ,
       motivo_cancelamento TEXT,
-      criada_em     TEXT NOT NULL DEFAULT (datetime('now'))
+      criada_em           TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
-  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_por TEXT;`); } catch {}
-  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN reservada_em TEXT;`); } catch {}
-  // História 2: colunas do cancelamento (bancos criados antes desta versão).
-  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN cancelada_em TEXT;`); } catch {}
-  try { conexao().exec(`ALTER TABLE doacoes ADD COLUMN motivo_cancelamento TEXT;`); } catch {}
 }
 
-/** Apaga todos os dados. Usado pelos testes. */
 export async function limparBanco() {
-  conexao().exec('DELETE FROM doacoes');
+  await query('TRUNCATE doacoes RESTART IDENTITY');
 }
 
 export async function encerrar() {
-  if (db) { db.close(); db = undefined; }
+  if (pool) { await pool.end(); pool = undefined; }
 }

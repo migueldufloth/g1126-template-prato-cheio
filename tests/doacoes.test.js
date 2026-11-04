@@ -189,7 +189,7 @@ describe('reservar e confirmar doação (Decisão 2 - Aula 6)', () => {
     // Simula expiração: altera reservada_em para 30 minutos atrás
     const { query } = await import('../src/db.js');
     await query(
-      "UPDATE doacoes SET reservada_em = datetime('now', '-30 minutes') WHERE id = ?",
+      "UPDATE doacoes SET reservada_em = now() - interval '30 minutes' WHERE id = ?",
       [publicada.body.id]
     );
 
@@ -333,7 +333,7 @@ describe('doador cancela uma doação (História 2 - Entrega 2)', () => {
     await request(app).post(`/api/doacoes/${id}/reservar`).send({ ong: 'ONG Resgate' });
 
     const { query } = await import('../src/db.js');
-    await query("UPDATE doacoes SET reservada_em = datetime('now', '-30 minutes') WHERE id = ?", [id]);
+    await query("UPDATE doacoes SET reservada_em = now() - interval '30 minutes' WHERE id = ?", [id]);
 
     const res = await request(app).post(`/api/doacoes/${id}/cancelar`).send({});
 
