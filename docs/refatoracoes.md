@@ -2,7 +2,7 @@
 
 *Trabalho 3 · uma seção por refatoração · o que importa é o motivo e a evidência*
 
-A Refatoração 1 é a migração de banco decidida no ADR 0002, feita em 04/11 (PR #19). As Refatorações 2 a 5 são as quatro da atividade da Aula 13. Os cheiros de código foram identificados com apoio de IA (Claude) e cada um foi conferido no código antes de mexer.
+A Refatoração 1 é a migração de banco decidida no ADR 0002, feita em 04/11 (PR #19). As Refatorações 2 a 5 são as quatro da atividade da Aula 13. Os cheiros de código foram identificados e cada um foi conferido no código antes de mexer.
 
 **Regra que seguimos:** antes de refatorar, conferir se os testes realmente pegariam uma quebra. Onde não pegavam, escrevemos o teste primeiro, vimos ele passar no código antigo e só então mexemos.
 
