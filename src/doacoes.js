@@ -1,5 +1,6 @@
 // Regras de negócio das doações.
 import * as repo from './repositorio.js';
+import { STATUS } from './status.js';
 
 const CAMPOS_OBRIGATORIOS = ['tipo', 'quantidade', 'validade'];
 const ERRO_JA_ACEITA = 'doação já foi aceita por outra ONG';
@@ -42,8 +43,8 @@ export async function listarDisponiveis({ tipo } = {}) {
 // Regra do caso: uma doação aceita não fica disponível para outra ONG.
 export async function aceitar(id, ong) {
   const doacao = await buscarExistente(id);
-  if (doacao.status === 'cancelada') throw new Error(ERRO_CANCELADA);
-  if (doacao.status !== 'disponivel') throw new Error(ERRO_JA_ACEITA);
+  if (doacao.status === STATUS.CANCELADA) throw new Error(ERRO_CANCELADA);
+  if (doacao.status !== STATUS.DISPONIVEL) throw new Error(ERRO_JA_ACEITA);
 
   const atualizada = await repo.aceitar(id, ong);
   if (!atualizada) throw new Error(ERRO_JA_ACEITA);
@@ -53,8 +54,8 @@ export async function aceitar(id, ong) {
 // Decisão 2 (Aula 6) — "uma ONG reserva uma doação temporariamente".
 export async function reservar(id, ong) {
   const doacao = await buscarExistente(id);
-  if (doacao.status === 'cancelada') throw new Error(ERRO_CANCELADA);
-  if (doacao.status !== 'disponivel') throw new Error('doação não está disponível para reserva');
+  if (doacao.status === STATUS.CANCELADA) throw new Error(ERRO_CANCELADA);
+  if (doacao.status !== STATUS.DISPONIVEL) throw new Error('doação não está disponível para reserva');
 
   const atualizada = await repo.reservar(id, ong);
   if (!atualizada) throw new Error('doação não está disponível para reserva');
@@ -64,7 +65,7 @@ export async function reservar(id, ong) {
 // Decisão 2 (Aula 6) — "uma ONG confirma a doação que reservou dentro do prazo".
 export async function confirmarReserva(id, ong) {
   const doacao = await buscarExistente(id);
-  if (doacao.status !== 'reservada') throw new Error('doação não está em estado de reserva');
+  if (doacao.status !== STATUS.RESERVADA) throw new Error('doação não está em estado de reserva');
   if (doacao.reservada_por !== ong) throw new Error('doação foi reservada por outra ONG');
 
   const atualizada = await repo.confirmarReserva(id, ong);
@@ -77,14 +78,14 @@ export async function confirmarReserva(id, ong) {
 // aceita ou já cancelada é recusada, para não tirar o alimento de uma ONG que
 // já se comprometeu com ele. Reserva vencida já voltou a `disponivel` e pode ser cancelada.
 const MENSAGEM_POR_STATUS = {
-  reservada: 'doação está reservada por uma ONG e não pode ser cancelada',
-  aceita: 'doação já foi aceita por uma ONG e não pode ser cancelada',
-  cancelada: 'doação já foi cancelada',
+  [STATUS.RESERVADA]: 'doação está reservada por uma ONG e não pode ser cancelada',
+  [STATUS.ACEITA]: 'doação já foi aceita por uma ONG e não pode ser cancelada',
+  [STATUS.CANCELADA]: 'doação já foi cancelada',
 };
 
 export async function cancelar(id, { motivo } = {}) {
   const doacao = await buscarExistente(id);
-  if (doacao.status !== 'disponivel') {
+  if (doacao.status !== STATUS.DISPONIVEL) {
     throw new Error(MENSAGEM_POR_STATUS[doacao.status] ?? 'doação não pode ser cancelada');
   }
 

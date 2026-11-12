@@ -2,6 +2,7 @@
 // Marcador de parâmetro é `?` (SQL parametrizado evita injeção):
 //   const { rows } = await query('SELECT * FROM doacoes WHERE id = ?', [id]);
 import { query } from './db.js';
+import { STATUS, PRAZO_RESERVA_MINUTOS } from './status.js';
 
 export async function inserir({ tipo, quantidade, validade }) {
   const { rows } = await query(
@@ -12,11 +13,12 @@ export async function inserir({ tipo, quantidade, validade }) {
 }
 
 export async function atualizarExpiradas() {
-  await query(`
-    UPDATE doacoes
-    SET status = 'disponivel', reservada_por = NULL, reservada_em = NULL
-    WHERE status = 'reservada' AND now() > reservada_em + interval '20 minutes'
-  `);
+  await query(
+    `UPDATE doacoes
+     SET status = ?, reservada_por = NULL, reservada_em = NULL
+     WHERE status = ? AND now() > reservada_em + (? * interval '1 minute')`,
+    [STATUS.DISPONIVEL, STATUS.RESERVADA, PRAZO_RESERVA_MINUTOS]
+  );
 }
 
 // História 6 (Entrega 2) — "ONG filtra as doações disponíveis por tipo de alimento".
@@ -28,14 +30,15 @@ export async function listarDisponiveis({ tipo } = {}) {
     const padrao = `%${tipo.toLowerCase().replace(/[\\%_]/g, '\\$&')}%`;
     const { rows } = await query(
       `SELECT * FROM doacoes
-       WHERE status = 'disponivel' AND LOWER(tipo) LIKE ? ESCAPE '\\'
+       WHERE status = ? AND LOWER(tipo) LIKE ? ESCAPE '\\'
        ORDER BY id`,
-      [padrao]
+      [STATUS.DISPONIVEL, padrao]
     );
     return rows;
   }
   const { rows } = await query(
-    `SELECT * FROM doacoes WHERE status = 'disponivel' ORDER BY id`
+    `SELECT * FROM doacoes WHERE status = ? ORDER BY id`,
+    [STATUS.DISPONIVEL]
   );
   return rows;
 }
@@ -51,8 +54,8 @@ export async function buscarPorId(id) {
 export async function aceitar(id, ong) {
   await atualizarExpiradas();
   const { alteradas } = await query(
-    `UPDATE doacoes SET status = 'aceita', ong = ? WHERE id = ? AND status = 'disponivel'`,
-    [ong, id]
+    `UPDATE doacoes SET status = ?, ong = ? WHERE id = ? AND status = ?`,
+    [STATUS.ACEITA, ong, id, STATUS.DISPONIVEL]
   );
   if (alteradas === 0) return undefined;
   return buscarPorId(id);
@@ -64,9 +67,9 @@ export async function reservar(id, ong) {
   await atualizarExpiradas();
   const { alteradas } = await query(
     `UPDATE doacoes
-     SET status = 'reservada', reservada_por = ?, reservada_em = now()
-     WHERE id = ? AND status = 'disponivel'`,
-    [ong, id]
+     SET status = ?, reservada_por = ?, reservada_em = now()
+     WHERE id = ? AND status = ?`,
+    [STATUS.RESERVADA, ong, id, STATUS.DISPONIVEL]
   );
   if (alteradas === 0) return undefined;
   return buscarPorId(id);
@@ -77,9 +80,9 @@ export async function confirmarReserva(id, ong) {
   await atualizarExpiradas();
   const { alteradas } = await query(
     `UPDATE doacoes
-     SET status = 'aceita', ong = ?
-     WHERE id = ? AND status = 'reservada' AND reservada_por = ?`,
-    [ong, id, ong]
+     SET status = ?, ong = ?
+     WHERE id = ? AND status = ? AND reservada_por = ?`,
+    [STATUS.ACEITA, ong, id, STATUS.RESERVADA, ong]
   );
   if (alteradas === 0) return undefined;
   return buscarPorId(id);
@@ -92,9 +95,9 @@ export async function cancelar(id, motivo) {
   await atualizarExpiradas();
   const { alteradas } = await query(
     `UPDATE doacoes
-     SET status = 'cancelada', cancelada_em = now(), motivo_cancelamento = ?
-     WHERE id = ? AND status = 'disponivel'`,
-    [motivo, id]
+     SET status = ?, cancelada_em = now(), motivo_cancelamento = ?
+     WHERE id = ? AND status = ?`,
+    [STATUS.CANCELADA, motivo, id, STATUS.DISPONIVEL]
   );
   if (alteradas === 0) return undefined;
   return buscarPorId(id);
