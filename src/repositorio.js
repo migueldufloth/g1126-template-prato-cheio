@@ -49,56 +49,55 @@ export async function buscarPorId(id) {
   return rows[0];
 }
 
-// A cláusula `status = 'disponivel'` garante que duas ONGs não aceitem a
-// mesma doação: se outra ONG já aceitou, `alteradas` vem 0.
-export async function aceitar(id, ong) {
+// Toda mudança de estado da doação segue o mesmo padrão (Decisão 2, Aula 6):
+// um UPDATE só altera a linha se a doação AINDA estiver no estado esperado (`de`).
+// É isso que torna a operação atômica — se duas ONGs (ou uma ONG e o doador)
+// chegam ao mesmo tempo, só a primeira encontra a doação no estado `de`; a outra
+// não altera nada e recebe `undefined`. O RETURNING * devolve a doação já
+// atualizada, sem uma segunda consulta ao banco.
+// `set` e `filtro` são trechos de SQL escritos neste arquivo, nunca vindos do
+// usuário; os valores vão sempre como parâmetro.
+async function transicionar(id, { de, para, set, valores = [], filtro, valoresFiltro = [] }) {
   await atualizarExpiradas();
-  const { alteradas } = await query(
-    `UPDATE doacoes SET status = ?, ong = ? WHERE id = ? AND status = ?`,
-    [STATUS.ACEITA, ong, id, STATUS.DISPONIVEL]
+  const { rows } = await query(
+    `UPDATE doacoes
+     SET status = ?, ${set}
+     WHERE id = ? AND status = ?${filtro ? ` AND ${filtro}` : ''}
+     RETURNING *`,
+    [para, ...valores, id, de, ...valoresFiltro]
   );
-  if (alteradas === 0) return undefined;
-  return buscarPorId(id);
+  return rows[0];
 }
 
-// Decisão 2 (Aula 6): Reserva com prazo.
-// Atualização atômica garante que apenas a primeira ONG consiga reservar a doação.
-export async function reservar(id, ong) {
-  await atualizarExpiradas();
-  const { alteradas } = await query(
-    `UPDATE doacoes
-     SET status = ?, reservada_por = ?, reservada_em = now()
-     WHERE id = ? AND status = ?`,
-    [STATUS.RESERVADA, ong, id, STATUS.DISPONIVEL]
-  );
-  if (alteradas === 0) return undefined;
-  return buscarPorId(id);
+// História zero: uma doação aceita não fica disponível para outra ONG.
+export function aceitar(id, ong) {
+  return transicionar(id, {
+    de: STATUS.DISPONIVEL, para: STATUS.ACEITA,
+    set: 'ong = ?', valores: [ong],
+  });
 }
 
-// Confirmação formal da reserva dentro do prazo pela mesma ONG.
-export async function confirmarReserva(id, ong) {
-  await atualizarExpiradas();
-  const { alteradas } = await query(
-    `UPDATE doacoes
-     SET status = ?, ong = ?
-     WHERE id = ? AND status = ? AND reservada_por = ?`,
-    [STATUS.ACEITA, ong, id, STATUS.RESERVADA, ong]
-  );
-  if (alteradas === 0) return undefined;
-  return buscarPorId(id);
+// Decisão 2 (Aula 6): reserva com prazo; só a primeira ONG consegue reservar.
+export function reservar(id, ong) {
+  return transicionar(id, {
+    de: STATUS.DISPONIVEL, para: STATUS.RESERVADA,
+    set: 'reservada_por = ?, reservada_em = now()', valores: [ong],
+  });
 }
 
-// História 2 (Entrega 2): cancelamento pelo doador.
-// Mesmo padrão do aceite e da reserva: o `AND status = 'disponivel'` torna a
-// operação atômica, então cancelar e reservar ao mesmo tempo não dão certo os dois.
-export async function cancelar(id, motivo) {
-  await atualizarExpiradas();
-  const { alteradas } = await query(
-    `UPDATE doacoes
-     SET status = ?, cancelada_em = now(), motivo_cancelamento = ?
-     WHERE id = ? AND status = ?`,
-    [STATUS.CANCELADA, motivo, id, STATUS.DISPONIVEL]
-  );
-  if (alteradas === 0) return undefined;
-  return buscarPorId(id);
+// Confirmação da reserva dentro do prazo, e só pela ONG que reservou.
+export function confirmarReserva(id, ong) {
+  return transicionar(id, {
+    de: STATUS.RESERVADA, para: STATUS.ACEITA,
+    set: 'ong = ?', valores: [ong],
+    filtro: 'reservada_por = ?', valoresFiltro: [ong],
+  });
+}
+
+// História 2 (Entrega 2): cancelamento pelo doador, só enquanto disponível.
+export function cancelar(id, motivo) {
+  return transicionar(id, {
+    de: STATUS.DISPONIVEL, para: STATUS.CANCELADA,
+    set: 'cancelada_em = now(), motivo_cancelamento = ?', valores: [motivo],
+  });
 }
