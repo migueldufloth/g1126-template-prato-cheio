@@ -43,21 +43,21 @@ Total: **33 → 50 testes**. Os 17 novos passaram no código antes de qualquer r
 - **Evidência de que o comportamento se manteve:**
   - testes antes da mudança (SQLite, commit `23ac02c`, o anterior à migração): **33 passando**
   - testes depois da mudança (PostgreSQL): **33 passando**
-  - link da execução do CI verde: *(preencher com o link do Actions do PR #19)*
+  - link da execução do CI verde: https://github.com/migueldufloth/g1126-template-prato-cheio/actions/runs/41932865595/job/126933903765?pr=19
 
 ## Refatoração 2 — Extrair o tratamento de erro das rotas (`src/app.js`)
 
 - **Cheiro de código atacado:** código duplicado. As 6 rotas repetiam o mesmo bloco `try { res.json(...) } catch { res.status(400).json({ erro }) }`, e `req.body?.ong ?? 'ONG'` aparecia 3 vezes.
 - **Qual dor concreta isso resolvia:** o contrato da API (sucesso em JSON, erro como 400 com `{ erro }`) estava espalhado. Mudar esse contrato, por exemplo para devolver 404 em "não encontrada", exigiria editar 6 lugares iguais e lembrar de todos.
 - **O que mudou:** criamos a função `rota(executar, statusSucesso)`, que embrulha cada rota, e `ongDa(req)`. Cada rota virou uma linha. O arquivo caiu de 62 para 39 linhas.
-- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `dfee81f`). A troca de `{ erro }` por `{ mensagem }` derruba 12 testes, e a troca da ONG padrão derruba 2.
+- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `149b42b`). A troca de `{ erro }` por `{ mensagem }` derruba 12 testes, e a troca da ONG padrão derruba 2.
 
 ## Refatoração 3 — Extrair a verificação "a doação existe" (`src/doacoes.js`)
 
 - **Cheiro de código atacado:** código duplicado. `aceitar`, `reservar`, `confirmarReserva` e `cancelar` abriam com as mesmas duas linhas: buscar por id e lançar `'doação não encontrada'`.
 - **Qual dor concreta isso resolvia:** a regra "a doação precisa existir" estava em 4 lugares. Uma nova operação, como editar a doação, teria de copiar o bloco, e mudar a mensagem exigiria mexer nos 4.
 - **O que mudou:** criamos a função `buscarExistente(id)`, que as 4 operações chamam.
-- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `54fbb3e`). Mudar o texto da mensagem derruba 5 testes (antes da caracterização, derrubava só 1).
+- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `7597477`). Mudar o texto da mensagem derruba 5 testes (antes da caracterização, derrubava só 1).
 
 ## Refatoração 4 — Constantes no lugar de textos e números mágicos (`src/status.js`)
 
@@ -67,7 +67,7 @@ Total: **33 → 50 testes**. Os 17 novos passaram no código antes de qualquer r
   - Novo arquivo `src/status.js`, com `STATUS` (objeto congelado, os mesmos estados do diagrama de estados) e `PRAZO_RESERVA_MINUTOS = 20`.
   - `doacoes.js` e `repositorio.js` passaram a usar essas constantes.
   - No SQL, status e prazo agora vão como parâmetro (`? * interval '1 minute'`), não concatenados.
-- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `96ef3b2`). Mudar o prazo para 25 minutos derruba o teste "reserva com 21 minutos já expirou". Na suíte original nenhum teste falhava, porque o único teste de expiração usava 30 minutos.
+- **Evidência (testes verdes antes e depois):** 44/44 antes e 44/44 depois (commit `723634c`). Mudar o prazo para 25 minutos derruba o teste "reserva com 21 minutos já expirou". Na suíte original nenhum teste falhava, porque o único teste de expiração usava 30 minutos.
 
 ## Refatoração 5 — Extrair a transição de estado atômica (`src/repositorio.js`)
 
@@ -81,7 +81,9 @@ Total: **33 → 50 testes**. Os 17 novos passaram no código antes de qualquer r
   - O `RETURNING *` devolve a doação já atualizada: **2 consultas por operação em vez de 4**.
 - **Evidência (testes verdes antes e depois):**
   - Primeiro criamos `tests/repositorio.test.js`, porque nenhum teste protegia a atomicidade (ver a tabela acima). Ele deu 50/50 no código antigo, e tirar a condição do UPDATE de `reservar` derrubava 2 testes.
-  - Depois da refatoração: 50/50 (commits `f1e6f79` e `f6306b8`). Tirar a condição de `transicionar()` derruba 4 testes.
+  - Depois da refatoração: 50/50 (commits `1cdd422` e `3b54983`). Tirar a condição de `transicionar()` derruba 4 testes.
+
+**CI verde das Refatorações 2 a 5 (PR #22):** https://github.com/migueldufloth/g1126-template-prato-cheio/actions/runs/43136343309/job/130912489550?pr=22
 
 ---
 
